@@ -343,6 +343,13 @@
         $('npcNameDeck').textContent = state.npcName;
         $('npcNameBattle').textContent = state.npcName;
 
+        // 更新玩家名称
+        const playerName = getUserName();
+        const playerNameDeck = $('playerNameDeck');
+        const playerNameBattle = $('playerNameBattle');
+        if (playerNameDeck) playerNameDeck.textContent = playerName;
+        if (playerNameBattle) playerNameBattle.textContent = playerName;
+
         // 显示加注界面
         showBetScreen();
     }
@@ -1029,7 +1036,7 @@
             let roundResultText = '';
             if (round.playerScore > round.npcScore) {
                 roundResultClass = 'round-win';
-                roundResultText = '✔ 玩家胜';
+                roundResultText = '✔ ' + getUserName() + '胜';
             } else if (round.npcScore > round.playerScore) {
                 roundResultClass = 'round-lose';
                 roundResultText = '✘ 对手胜';
@@ -1083,7 +1090,7 @@
         html += `<div class="st-summary-row">`;
         html += `  <div class="st-summary-item">`;
         html += `    <div class="st-summary-avatar player-border">🧑</div>`;
-        html += `    <div class="st-summary-label">玩家</div>`;
+    html += `    <div class="st-summary-label">${getUserName()}</div>`;
         html += `    <div class="st-summary-big">${state.playerRoundsWon}</div>`;
         html += `    <div class="st-summary-sub">轮胜</div>`;
         html += `  </div>`;

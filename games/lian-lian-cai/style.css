@@ -519,6 +519,47 @@ body {
     text-align: center;
 }
 
+/* --- 竞拍信息栏（余额+奖池） --- */
+.auction-info-bar {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    padding: 6px 20px 2px;
+}
+
+.auction-info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.auction-info-item.auction-pot {
+    background: rgba(201,168,76,0.08);
+    border-color: rgba(201,168,76,0.2);
+}
+
+.auction-info-icon {
+    font-size: 16px;
+}
+
+.auction-info-label {
+    color: var(--text-dim);
+    font-size: 12px;
+}
+
+.auction-info-value {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--gold);
+    min-width: 28px;
+    text-align: center;
+}
+
 /* ============ NPC 对话 ============ */
 .npc-dialog {
     text-align: center;

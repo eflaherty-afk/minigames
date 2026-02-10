@@ -258,7 +258,6 @@
         currentRound: 0,          // 当前轮次 0-2
         playerRoundsWon: 0,
         npcRoundsWon: 0,
-        betAmount: 20,             // 当前下注金额
 
         // 每轮数据
         playerDeck: [],            // 玩家本轮牌组
@@ -350,65 +349,9 @@
         if (playerNameDeck) playerNameDeck.textContent = playerName;
         if (playerNameBattle) playerNameBattle.textContent = playerName;
 
-        // 显示加注界面
-        showBetScreen();
-    }
-
-    // ========== 加注阶段 ==========
-    function showBetScreen() {
-        switchScreen('betScreen');
-        const coins = getCoins();
-        $('betCoinAmount').textContent = coins;
-
-        // 默认选20，但如果余额不足则选最小的
-        let defaultBet = 20;
-        if (coins < 20) defaultBet = coins >= 10 ? 10 : (coins >= 5 ? 5 : 0);
-        state.betAmount = defaultBet;
-
-        updateBetUI();
-    }
-
-    function updateBetUI() {
-        const coins = getCoins();
-        const bet = state.betAmount;
-
-        // 高亮选中
-        document.querySelectorAll('.bet-option').forEach(el => {
-            const v = parseInt(el.dataset.bet);
-            el.classList.toggle('selected', v === bet);
-            el.classList.toggle('disabled', v > coins);
-        });
-
-        $('betSelectedAmount').textContent = bet;
-        $('betRewardWin').textContent = '+' + bet;
-        $('betRewardLose').textContent = '-' + bet;
-
-        // 余额不足提示
-        const insuffMsg = $('betInsufficientMsg');
-        if (bet > coins || coins <= 0) {
-            insuffMsg.style.display = 'block';
-            $('btnConfirmBet').style.opacity = '0.5';
-            $('btnConfirmBet').style.pointerEvents = 'none';
-        } else {
-            insuffMsg.style.display = 'none';
-            $('btnConfirmBet').style.opacity = '1';
-            $('btnConfirmBet').style.pointerEvents = 'auto';
-        }
-    }
-
-    // 全局：选择下注额
-    window._selectBet = function(amount) {
-        const coins = getCoins();
-        if (amount > coins) return;
-        state.betAmount = amount;
-        updateBetUI();
-    };
-
-    $('btnConfirmBet').addEventListener('click', function() {
-        if (state.betAmount > getCoins()) return;
-        // 进入技能选择
+        // 直接进入技能选择（跳过独立下注界面）
         showSkillSelection();
-    });
+    }
 
     // ========== 技能选择阶段 ==========
     function showSkillSelection() {
@@ -473,8 +416,8 @@
         // 生成2个牌组供竞拍
         const decks = generateDeckOptions(2);
         auctionState.decks = decks;
-        auctionState.playerBid = 0;
-        auctionState.npcBid = 0;
+        auctionState.playerBid = 5;  // 最低默认出价5
+        auctionState.npcBid = 5;     // 最低默认出价5
         auctionState.currentTurn = Math.random() < 0.5 ? 'player' : 'npc'; // 随机先手
         auctionState.isFinished = false;
         auctionState.playerPassed = false;
@@ -517,11 +460,26 @@
         $('auctionNpcName').textContent = state.npcName;
         $('auctionPlayerName').textContent = getUserName();
 
+        // 更新玩家余额显示
+        updateAuctionCoinsDisplay();
+
         // 更新NPC对话
         updateAuctionDialog();
 
         // 更新回合指示
         updateAuctionTurnUI();
+    }
+
+    function updateAuctionCoinsDisplay() {
+        const coinsEl = $('auctionPlayerCoins');
+        if (coinsEl) {
+            const remaining = getCoins() - auctionState.playerBid;
+            coinsEl.textContent = remaining;
+        }
+        const totalEl = $('auctionTotalPot');
+        if (totalEl) {
+            totalEl.textContent = auctionState.playerBid + auctionState.npcBid;
+        }
     }
 
     function updateAuctionTurnUI() {
@@ -620,9 +578,18 @@
     // 玩家加价
     window._auctionBid = function(amount) {
         if (auctionState.currentTurn !== 'player' || auctionState.isFinished || auctionState.playerPassed) return;
+        // 限制不能超过余额
+        const coins = getCoins();
+        if (auctionState.playerBid + amount > coins) {
+            // 尝试加到余额上限
+            const maxAdd = coins - auctionState.playerBid;
+            if (maxAdd <= 0) return;
+            amount = maxAdd;
+        }
         auctionState.playerBid += amount;
         stopAuctionTimer();
         updateAuctionTurnUI();
+        updateAuctionCoinsDisplay();
 
         // 检查是否NPC已pass -> 直接结束
         if (auctionState.npcPassed) {
@@ -710,6 +677,7 @@
 
         $('auctionNpcBid').textContent = auctionState.npcBid;
         updateAuctionDialog();
+        updateAuctionCoinsDisplay();
 
         // 如果NPC pass了
         if (auctionState.npcPassed) {
@@ -1305,12 +1273,15 @@
         const isFinalWin = playerTotalWins > npcTotalWins;
         const isFinalDraw = playerTotalWins === npcTotalWins;
 
-        // 计算赌金变化
+        // 计算赌金变化（竞拍总额 = 双方出价之和）
+        const totalPot = auctionState.playerBid + auctionState.npcBid;
         let coinDelta = 0;
         if (isFinalWin) {
-            coinDelta = state.betAmount;
+            // 赢家赢得对方的出价（净收益 = 对方出价）
+            coinDelta = auctionState.npcBid;
         } else if (!isFinalDraw) {
-            coinDelta = -state.betAmount;
+            // 输家失去自己的出价
+            coinDelta = -auctionState.playerBid;
         }
 
         // 更新用户余额
@@ -1318,13 +1289,13 @@
 
         // 标题
         if (isFinalWin) {
-            $('resultTitle').innerHTML = '🏆 胜利 <span style="font-size:18px; color:#2ecc71;">+' + state.betAmount + ' 💰</span>';
+            $('resultTitle').innerHTML = '🏆 胜利 <span style="font-size:18px; color:#2ecc71;">+' + auctionState.npcBid + ' 💰</span>';
             $('resultTitle').style.color = '#27ae60';
         } else if (isFinalDraw) {
             $('resultTitle').innerHTML = '🤝 平局 <span style="font-size:18px; color:#c9a84c;">±0 💰</span>';
             $('resultTitle').style.color = '#c9a84c';
         } else {
-            $('resultTitle').innerHTML = '💀 失败 <span style="font-size:18px; color:#e74c3c;">-' + state.betAmount + ' 💰</span>';
+            $('resultTitle').innerHTML = '💀 失败 <span style="font-size:18px; color:#e74c3c;">-' + auctionState.playerBid + ' 💰</span>';
             $('resultTitle').style.color = '#c0392b';
         }
 
@@ -1340,10 +1311,15 @@
         // 在得分表后面添加赌金结算信息
         const container = $('scoreTable');
         let html = container.innerHTML;
+        const totalPot = auctionState.playerBid + auctionState.npcBid;
         html += `<div class="bet-result-section">`;
         html += `<div class="bet-result-row">`;
-        html += `  <span>下注金额</span>`;
-        html += `  <strong>${state.betAmount} 💰</strong>`;
+        html += `  <span>竞拍投入（你 / 对手）</span>`;
+        html += `  <strong>${auctionState.playerBid} / ${auctionState.npcBid} 💰</strong>`;
+        html += `</div>`;
+        html += `<div class="bet-result-row">`;
+        html += `  <span>奖池总额</span>`;
+        html += `  <strong>${totalPot} 💰</strong>`;
         html += `</div>`;
         html += `<div class="bet-result-row ${delta > 0 ? 'bet-win' : delta < 0 ? 'bet-lose' : 'bet-draw'}">`;
         html += `  <span>本局收益</span>`;

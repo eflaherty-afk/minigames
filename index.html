@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 小游戏大厅</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- 背景粒子动画 -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- 顶部导航 -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <span class="logo-icon">🎮</span>
+                <h1>小游戏大厅</h1>
+            </div>
+            <div class="search-bar">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="searchInput" placeholder="搜索游戏..." autocomplete="off">
+            </div>
+            <div class="header-stats">
+                <span id="gameCount" class="stat-badge">0 款游戏</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 分类过滤标签 -->
+    <section class="filter-section">
+        <div class="filter-tags" id="filterTags">
+            <button class="filter-tag active" data-category="all">🏠 全部</button>
+            <button class="filter-tag" data-category="action">⚔️ 动作</button>
+            <button class="filter-tag" data-category="puzzle">🧩 益智</button>
+            <button class="filter-tag" data-category="casual">🎯 休闲</button>
+            <button class="filter-tag" data-category="strategy">♟️ 策略</button>
+            <button class="filter-tag" data-category="adventure">🗺️ 冒险</button>
+            <button class="filter-tag" data-category="sport">⚽ 体育</button>
+        </div>
+    </section>
+
+    <!-- 游戏卡片网格 -->
+    <main class="games-container">
+        <div class="games-grid" id="gamesGrid">
+            <!-- 游戏卡片由 JS 动态渲染 -->
+        </div>
+
+        <!-- 空状态提示 -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">🎲</div>
+            <h2>暂无匹配的游戏</h2>
+            <p>试试其他关键词或分类吧~</p>
+        </div>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <p>🚀 小游戏大厅 — 在 <code>games-config.js</code> 中添加新游戏</p>
+    </footer>
+
+    <script src="games-config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

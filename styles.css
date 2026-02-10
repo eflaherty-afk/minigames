@@ -148,6 +148,187 @@ body {
     white-space: nowrap;
 }
 
+/* --- 用户信息栏 --- */
+.user-info-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.user-coins {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border-radius: 50px;
+    cursor: default;
+    transition: var(--transition);
+    position: relative;
+}
+
+.user-coins:hover {
+    box-shadow: 0 0 16px rgba(243, 156, 18, 0.4);
+}
+
+.coin-icon {
+    font-size: 18px;
+}
+
+.coin-amount {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    min-width: 30px;
+    text-align: center;
+}
+
+.coin-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+}
+
+.user-coins.coin-bounce {
+    animation: coinBounce 0.5s ease;
+}
+
+@keyframes coinBounce {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+    60% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-color);
+    border-radius: 50px;
+}
+
+.user-avatar {
+    font-size: 22px;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* --- 用户名弹窗 --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+
+.modal-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 40px;
+    text-align: center;
+    max-width: 400px;
+    width: 90%;
+    animation: fadeInUp 0.5s ease;
+}
+
+.modal-icon {
+    font-size: 56px;
+    margin-bottom: 12px;
+}
+
+.modal-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.modal-desc {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.modal-desc strong {
+    color: #f39c12;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 14px 20px;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.05);
+    color: var(--text-primary);
+    font-size: 16px;
+    outline: none;
+    transition: var(--transition);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.modal-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(108,92,231,0.15);
+}
+
+.modal-input::placeholder {
+    color: var(--text-secondary);
+}
+
+.modal-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.modal-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108,92,231,0.4);
+}
+
+/* --- 小爱豆飘字动画 --- */
+.coin-float {
+    position: fixed;
+    font-size: 18px;
+    font-weight: 800;
+    color: #f39c12;
+    text-shadow: 0 0 8px rgba(243,156,18,0.6);
+    pointer-events: none;
+    z-index: 10000;
+    animation: coinFloat 1.2s ease-out forwards;
+}
+
+@keyframes coinFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+}
+
 /* --- 分类过滤 --- */
 .filter-section {
     position: relative;
@@ -320,6 +501,18 @@ body {
     box-shadow: 0 0 16px rgba(0, 206, 201, 0.4);
 }
 
+.game-card-cost {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: rgba(243, 156, 18, 0.12);
+    border-radius: 50px;
+    font-size: 12px;
+    color: #f39c12;
+    font-weight: 600;
+}
+
 /* --- 空状态 --- */
 .empty-state {
     text-align: center;
@@ -374,6 +567,15 @@ body {
         order: 3;
         max-width: 100%;
         flex-basis: 100%;
+    }
+
+    .user-info-bar {
+        order: 2;
+        margin-left: auto;
+    }
+
+    .coin-label {
+        display: none;
     }
 
     .games-container {

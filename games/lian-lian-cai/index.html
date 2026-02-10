@@ -21,9 +21,68 @@
                         <li>每大局共 <strong>3 轮</strong>，每轮各出 <strong>5 张牌</strong></li>
                         <li>每轮赢牌多者胜出该轮，<strong>三局两胜</strong>决定最终赢家</li>
                         <li>每局开始前可选择 <strong>1 张技能卡</strong>，在对战中使用</li>
+                        <li>开局需 <strong>下注小爱豆</strong>，胜利赢回、失败扣除 💰</li>
                     </ul>
                 </div>
                 <button class="btn-primary" id="btnStart">⚔️ 开始对战</button>
+            </div>
+        </div>
+
+        <!-- ====== 阶段1.2: 加注界面 ====== -->
+        <div id="betScreen" class="screen">
+            <div class="bet-content">
+                <div class="bet-header">
+                    <div class="bet-coin-display">
+                        <span class="bet-coin-icon">💰</span>
+                        <span class="bet-coin-amount" id="betCoinAmount">100</span>
+                        <span class="bet-coin-label">小爱豆</span>
+                    </div>
+                </div>
+                <h2 class="bet-title">💎 下注</h2>
+                <p class="bet-subtitle">选择你要押注的小爱豆数量</p>
+
+                <div class="bet-options" id="betOptions">
+                    <div class="bet-option" data-bet="5" onclick="window._selectBet(5)">
+                        <span class="bet-amount">5</span>
+                        <span class="bet-label">小试牛刀</span>
+                    </div>
+                    <div class="bet-option" data-bet="10" onclick="window._selectBet(10)">
+                        <span class="bet-amount">10</span>
+                        <span class="bet-label">有点意思</span>
+                    </div>
+                    <div class="bet-option selected" data-bet="20" onclick="window._selectBet(20)">
+                        <span class="bet-amount">20</span>
+                        <span class="bet-label">来者不拒</span>
+                    </div>
+                    <div class="bet-option" data-bet="50" onclick="window._selectBet(50)">
+                        <span class="bet-amount">50</span>
+                        <span class="bet-label">豪赌一场</span>
+                    </div>
+                </div>
+
+                <div class="bet-selected-info">
+                    <span>当前下注：</span>
+                    <strong id="betSelectedAmount">20</strong>
+                    <span> 小爱豆</span>
+                </div>
+
+                <div class="bet-reward-preview">
+                    <div class="bet-reward-item bet-reward-win">
+                        <span>🏆 胜利</span>
+                        <strong id="betRewardWin">+20</strong>
+                    </div>
+                    <div class="bet-reward-item bet-reward-draw">
+                        <span>🤝 平局</span>
+                        <strong>±0</strong>
+                    </div>
+                    <div class="bet-reward-item bet-reward-lose">
+                        <span>💀 失败</span>
+                        <strong id="betRewardLose">-20</strong>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btnConfirmBet">⚔️ 确认下注，开始对战！</button>
+                <p class="bet-insufficient" id="betInsufficientMsg" style="display:none;">余额不足，请选择更低的下注额</p>
             </div>
         </div>
 

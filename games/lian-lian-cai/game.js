@@ -25,6 +25,37 @@
     const TOTAL_ROUNDS = 3;       // 总共3轮
     const CARDS_PER_ROUND = 5;    // 每轮出5张牌
 
+    // ========== 用户数据（从localStorage读取，与大厅共享） ==========
+    const STORAGE_KEY = 'minigame_lobby_user';
+
+    function loadUserData() {
+        try {
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
+            if (data && data.name && typeof data.coins === 'number') return data;
+        } catch (e) {}
+        return { name: '玩家', coins: 100 };
+    }
+
+    function saveUserData(data) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function addCoins(amount) {
+        const data = loadUserData();
+        data.coins += amount;
+        if (data.coins < 0) data.coins = 0;
+        saveUserData(data);
+        return data.coins;
+    }
+
+    function getCoins() {
+        return loadUserData().coins;
+    }
+
+    function getUserName() {
+        return loadUserData().name;
+    }
+
     // NPC 对话库
     const NPC_DIALOGS = {
         deckSelect: [
@@ -227,6 +258,7 @@
         currentRound: 0,          // 当前轮次 0-2
         playerRoundsWon: 0,
         npcRoundsWon: 0,
+        betAmount: 20,             // 当前下注金额
 
         // 每轮数据
         playerDeck: [],            // 玩家本轮牌组
@@ -293,6 +325,12 @@
     // ========== 开始界面 ==========
     $('btnStart').addEventListener('click', startGame);
 
+    // 开始界面上显示当前余额
+    function updateStartScreenInfo() {
+        const nameEl = document.querySelector('#startScreen .player-name-display');
+        // 在开始界面动态显示用户名和余额已经交由betScreen处理
+    }
+
     function startGame() {
         // 初始化状态
         state.npcName = randomPick(NPC_NAMES);
@@ -305,9 +343,65 @@
         $('npcNameDeck').textContent = state.npcName;
         $('npcNameBattle').textContent = state.npcName;
 
-        // 显示技能选择
-        showSkillSelection();
+        // 显示加注界面
+        showBetScreen();
     }
+
+    // ========== 加注阶段 ==========
+    function showBetScreen() {
+        switchScreen('betScreen');
+        const coins = getCoins();
+        $('betCoinAmount').textContent = coins;
+
+        // 默认选20，但如果余额不足则选最小的
+        let defaultBet = 20;
+        if (coins < 20) defaultBet = coins >= 10 ? 10 : (coins >= 5 ? 5 : 0);
+        state.betAmount = defaultBet;
+
+        updateBetUI();
+    }
+
+    function updateBetUI() {
+        const coins = getCoins();
+        const bet = state.betAmount;
+
+        // 高亮选中
+        document.querySelectorAll('.bet-option').forEach(el => {
+            const v = parseInt(el.dataset.bet);
+            el.classList.toggle('selected', v === bet);
+            el.classList.toggle('disabled', v > coins);
+        });
+
+        $('betSelectedAmount').textContent = bet;
+        $('betRewardWin').textContent = '+' + bet;
+        $('betRewardLose').textContent = '-' + bet;
+
+        // 余额不足提示
+        const insuffMsg = $('betInsufficientMsg');
+        if (bet > coins || coins <= 0) {
+            insuffMsg.style.display = 'block';
+            $('btnConfirmBet').style.opacity = '0.5';
+            $('btnConfirmBet').style.pointerEvents = 'none';
+        } else {
+            insuffMsg.style.display = 'none';
+            $('btnConfirmBet').style.opacity = '1';
+            $('btnConfirmBet').style.pointerEvents = 'auto';
+        }
+    }
+
+    // 全局：选择下注额
+    window._selectBet = function(amount) {
+        const coins = getCoins();
+        if (amount > coins) return;
+        state.betAmount = amount;
+        updateBetUI();
+    };
+
+    $('btnConfirmBet').addEventListener('click', function() {
+        if (state.betAmount > getCoins()) return;
+        // 进入技能选择
+        showSkillSelection();
+    });
 
     // ========== 技能选择阶段 ==========
     function showSkillSelection() {
@@ -871,15 +965,26 @@
         const isFinalWin = playerTotalWins > npcTotalWins;
         const isFinalDraw = playerTotalWins === npcTotalWins;
 
+        // 计算赌金变化
+        let coinDelta = 0;
+        if (isFinalWin) {
+            coinDelta = state.betAmount;
+        } else if (!isFinalDraw) {
+            coinDelta = -state.betAmount;
+        }
+
+        // 更新用户余额
+        const newCoins = addCoins(coinDelta);
+
         // 标题
         if (isFinalWin) {
-            $('resultTitle').textContent = '🏆 胜利 - 结算详情';
+            $('resultTitle').innerHTML = '🏆 胜利 <span style="font-size:18px; color:#2ecc71;">+' + state.betAmount + ' 💰</span>';
             $('resultTitle').style.color = '#27ae60';
         } else if (isFinalDraw) {
-            $('resultTitle').textContent = '🤝 平局 - 结算详情';
+            $('resultTitle').innerHTML = '🤝 平局 <span style="font-size:18px; color:#c9a84c;">±0 💰</span>';
             $('resultTitle').style.color = '#c9a84c';
         } else {
-            $('resultTitle').textContent = '💀 失败 - 结算详情';
+            $('resultTitle').innerHTML = '💀 失败 <span style="font-size:18px; color:#e74c3c;">-' + state.betAmount + ' 💰</span>';
             $('resultTitle').style.color = '#c0392b';
         }
 
@@ -887,6 +992,29 @@
         renderTimeline();
         // 得分表
         renderScoreTable();
+        // 赌金结算信息
+        renderBetResult(coinDelta, newCoins);
+    }
+
+    function renderBetResult(delta, newCoins) {
+        // 在得分表后面添加赌金结算信息
+        const container = $('scoreTable');
+        let html = container.innerHTML;
+        html += `<div class="bet-result-section">`;
+        html += `<div class="bet-result-row">`;
+        html += `  <span>下注金额</span>`;
+        html += `  <strong>${state.betAmount} 💰</strong>`;
+        html += `</div>`;
+        html += `<div class="bet-result-row ${delta > 0 ? 'bet-win' : delta < 0 ? 'bet-lose' : 'bet-draw'}">`;
+        html += `  <span>本局收益</span>`;
+        html += `  <strong>${delta > 0 ? '+' : ''}${delta} 💰</strong>`;
+        html += `</div>`;
+        html += `<div class="bet-result-row">`;
+        html += `  <span>当前余额</span>`;
+        html += `  <strong class="bet-balance">${newCoins} 💰</strong>`;
+        html += `</div>`;
+        html += `</div>`;
+        container.innerHTML = html;
     }
 
     function renderTimeline() {
@@ -998,4 +1126,23 @@
     $('btnBackToLobby').addEventListener('click', function () {
         window.location.href = '../../index.html';
     });
+
+    // ========== 更新开始界面上的用户信息 ==========
+    (function updateStartInfo() {
+        const data = loadUserData();
+        // 在开始按钮下面显示用户信息
+        const startContent = document.querySelector('.start-content');
+        if (startContent && !document.querySelector('.start-user-info')) {
+            const info = document.createElement('div');
+            info.className = 'start-user-info';
+            info.innerHTML = `
+                <div style="margin-top:24px; padding:12px 24px; background:rgba(255,255,255,0.05); border-radius:12px; display:inline-flex; align-items:center; gap:16px;">
+                    <span style="font-size:20px;">😊</span>
+                    <span style="font-weight:600;">${data.name}</span>
+                    <span style="color:var(--gold); font-weight:800;">💰 ${data.coins} 小爱豆</span>
+                </div>
+            `;
+            startContent.appendChild(info);
+        }
+    })();
 })();

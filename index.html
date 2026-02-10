@@ -13,7 +13,7 @@
     <!-- 顶部导航 -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">
+            <div class="logo" id="logoArea">
                 <span class="logo-icon">🎮</span>
                 <h1>小游戏大厅</h1>
             </div>
@@ -21,8 +21,16 @@
                 <span class="search-icon">🔍</span>
                 <input type="text" id="searchInput" placeholder="搜索游戏..." autocomplete="off">
             </div>
-            <div class="header-stats">
-                <span id="gameCount" class="stat-badge">0 款游戏</span>
+            <div class="user-info-bar">
+                <div class="user-coins" id="userCoins" title="小爱豆余额">
+                    <span class="coin-icon">💰</span>
+                    <span class="coin-amount" id="coinAmount">100</span>
+                    <span class="coin-label">小爱豆</span>
+                </div>
+                <div class="user-profile" id="userProfile">
+                    <span class="user-avatar">😊</span>
+                    <span class="user-name" id="userName">玩家</span>
+                </div>
             </div>
         </div>
     </header>
@@ -56,8 +64,19 @@
 
     <!-- 页脚 -->
     <footer class="footer">
-        <p>🚀 小游戏大厅 — 在 <code>games-config.js</code> 中添加新游戏</p>
+        <p>🚀 小游戏大厅 — 快来赢取小爱豆吧！</p>
     </footer>
+
+    <!-- 用户名设置弹窗 -->
+    <div class="modal-overlay" id="nameModal" style="display:none;">
+        <div class="modal-box">
+            <div class="modal-icon">🎮</div>
+            <h2 class="modal-title">欢迎来到小游戏大厅！</h2>
+            <p class="modal-desc">给自己取个名字吧，初始赠送 <strong>100 小爱豆</strong> 💰</p>
+            <input type="text" class="modal-input" id="nameInput" placeholder="请输入你的昵称..." maxlength="12" autocomplete="off">
+            <button class="modal-btn" id="nameConfirmBtn">✨ 进入大厅</button>
+        </div>
+    </div>
 
     <script src="games-config.js"></script>
     <script src="app.js"></script>

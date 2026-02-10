@@ -854,6 +854,232 @@ body {
     margin-top: 24px;
 }
 
+/* ============ 加注界面 ============ */
+#betScreen {
+    background: radial-gradient(ellipse at center, #1a1a0a 0%, #0d0d05 100%);
+    align-items: center;
+    justify-content: center;
+}
+
+.bet-content {
+    text-align: center;
+    padding: 32px 20px;
+    max-width: 520px;
+    width: 100%;
+    animation: fadeIn 0.6s ease;
+}
+
+.bet-header {
+    margin-bottom: 24px;
+}
+
+.bet-coin-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border-radius: 50px;
+    font-weight: 700;
+}
+
+.bet-coin-icon {
+    font-size: 22px;
+}
+
+.bet-coin-amount {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+}
+
+.bet-coin-label {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+}
+
+.bet-title {
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(201,168,76,0.4);
+    margin-bottom: 6px;
+}
+
+.bet-subtitle {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 28px;
+}
+
+.bet-options {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.bet-option {
+    width: 100px;
+    padding: 16px 10px;
+    background: rgba(201,168,76,0.08);
+    border: 2px solid rgba(201,168,76,0.2);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.bet-option:hover:not(.disabled) {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(201,168,76,0.2);
+}
+
+.bet-option.selected {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.15);
+    box-shadow: 0 0 16px rgba(201,168,76,0.3);
+}
+
+.bet-option.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.bet-amount {
+    display: block;
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--gold);
+    margin-bottom: 4px;
+}
+
+.bet-label {
+    font-size: 11px;
+    color: var(--text-dim);
+}
+
+.bet-selected-info {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 16px;
+}
+
+.bet-selected-info strong {
+    font-size: 24px;
+    color: var(--gold);
+    margin: 0 4px;
+}
+
+.bet-reward-preview {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 28px;
+}
+
+.bet-reward-item {
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.bet-reward-item span {
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.bet-reward-item strong {
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.bet-reward-win {
+    background: rgba(39,174,96,0.1);
+    border: 1px solid rgba(39,174,96,0.25);
+}
+
+.bet-reward-win strong {
+    color: var(--green);
+}
+
+.bet-reward-draw {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.2);
+}
+
+.bet-reward-draw strong {
+    color: var(--gold);
+}
+
+.bet-reward-lose {
+    background: rgba(192,57,43,0.1);
+    border: 1px solid rgba(192,57,43,0.25);
+}
+
+.bet-reward-lose strong {
+    color: var(--red);
+}
+
+.bet-insufficient {
+    color: var(--red);
+    font-size: 13px;
+    margin-top: 12px;
+    animation: pulse 1s infinite;
+}
+
+/* ============ 结算赌金信息 ============ */
+.bet-result-section {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 14px;
+}
+
+.bet-result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+}
+
+.bet-result-row + .bet-result-row {
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.bet-result-row strong {
+    font-size: 18px;
+    color: var(--text);
+}
+
+.bet-result-row.bet-win strong {
+    color: var(--green);
+    font-size: 22px;
+}
+
+.bet-result-row.bet-lose strong {
+    color: var(--red);
+    font-size: 22px;
+}
+
+.bet-result-row.bet-draw strong {
+    color: var(--gold);
+}
+
+.bet-balance {
+    color: var(--gold) !important;
+}
+
 /* ============ 技能选择界面 ============ */
 #skillScreen {
     background: radial-gradient(ellipse at center, #1a1133 0%, #0d0520 100%);
@@ -1211,5 +1437,27 @@ body {
 
     .peek-hint {
         font-size: 11px;
+    }
+
+    .bet-options {
+        gap: 8px;
+    }
+
+    .bet-option {
+        width: 80px;
+        padding: 12px 8px;
+    }
+
+    .bet-amount {
+        font-size: 22px;
+    }
+
+    .bet-reward-preview {
+        gap: 8px;
+    }
+
+    .bet-reward-item {
+        padding: 6px 10px;
+        min-width: 70px;
     }
 }

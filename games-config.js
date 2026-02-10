@@ -19,11 +19,12 @@ const GAMES = [
     {
         id: 'lian-lian-cai',
         name: '连连猜',
-        desc: '石头剪刀布卡牌对战！选择牌组，与NPC斗智斗勇，三局两胜决胜负！',
+        desc: '石头剪刀布卡牌对战！选择牌组，与NPC斗智斗勇，赢取小爱豆！',
         icon: '✊',
         category: 'strategy',
         url: './games/lian-lian-cai/index.html',
         color: 'linear-gradient(135deg, #c0392b, #7a1a1a)',
+        cost: '5~50',
     },
 ];
 

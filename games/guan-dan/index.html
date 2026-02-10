@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>掼蛋 - 经典四人扑克对战</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ====== 阶段1: 开始界面 ====== -->
+        <div id="startScreen" class="screen active">
+            <div class="start-content">
+                <div class="game-logo">🃏♠♥♦♣</div>
+                <h1 class="game-title">掼 蛋</h1>
+                <p class="game-subtitle">经典四人扑克 · 升级对战</p>
+                <div class="game-rules">
+                    <h3>📜 规则说明</h3>
+                    <ul>
+                        <li>4人对战，你和对家为一队，与另外两位AI对抗</li>
+                        <li>使用两副牌（108张），当前等级的同花色牌为<strong>逢人配（万能牌）</strong></li>
+                        <li>从 <strong>2</strong> 开始打，先升到 <strong>A</strong> 的队伍获胜</li>
+                        <li>牌型：单张、对子、三同、三带二、顺子、连对、钢板（三连）、炸弹、同花顺等</li>
+                        <li>炸弹大小：4炸 &lt; 5炸 &lt; 6炸 &lt; 7炸 &lt; 8炸 &lt; 天王炸</li>
+                        <li>每手结束按名次升级：头游方双升、末游方不升</li>
+                        <li>下注 <strong>10 小爱豆</strong> 无技能，下注 <strong>20 小爱豆</strong> 可选技能卡</li>
+                    </ul>
+                </div>
+                <button class="btn-primary" id="btnStart">🃏 开始掼蛋</button>
+            </div>
+        </div>
+
+        <!-- ====== 阶段1.2: 下注界面 ====== -->
+        <div id="betScreen" class="screen">
+            <div class="bet-content">
+                <div class="bet-header">
+                    <div class="bet-coin-display">
+                        <span class="bet-coin-icon">💰</span>
+                        <span class="bet-coin-amount" id="betCoinAmount">100</span>
+                        <span class="bet-coin-label">小爱豆</span>
+                    </div>
+                </div>
+                <h2 class="bet-title">💎 下注</h2>
+                <p class="bet-subtitle">选择你要押注的小爱豆数量</p>
+
+                <div class="bet-options" id="betOptions">
+                    <div class="bet-option" data-bet="10" onclick="window._selectBet(10)">
+                        <span class="bet-amount">10</span>
+                        <span class="bet-label">普通局</span>
+                        <span class="bet-skill-hint">无技能</span>
+                    </div>
+                    <div class="bet-option selected" data-bet="20" onclick="window._selectBet(20)">
+                        <span class="bet-amount">20</span>
+                        <span class="bet-label">高手局</span>
+                        <span class="bet-skill-hint">🌟 可选技能卡</span>
+                    </div>
+                </div>
+
+                <div class="bet-selected-info">
+                    <span>当前下注：</span>
+                    <strong id="betSelectedAmount">20</strong>
+                    <span> 小爱豆</span>
+                </div>
+
+                <div class="bet-reward-preview">
+                    <div class="bet-reward-item bet-reward-gold">
+                        <span>🥇 头游</span>
+                        <strong id="betReward1st">+40</strong>
+                    </div>
+                    <div class="bet-reward-item bet-reward-silver">
+                        <span>🥈 二游</span>
+                        <strong id="betReward2nd">+20</strong>
+                    </div>
+                    <div class="bet-reward-item bet-reward-bronze">
+                        <span>🥉 三游</span>
+                        <strong id="betReward3rd">-10</strong>
+                    </div>
+                    <div class="bet-reward-item bet-reward-lose">
+                        <span>💀 末游</span>
+                        <strong id="betReward4th">-20</strong>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btnConfirmBet">🃏 确认下注，开始对战！</button>
+                <p class="bet-insufficient" id="betInsufficientMsg" style="display:none;">余额不足，请选择更低的下注额</p>
+            </div>
+        </div>
+
+        <!-- ====== 阶段1.5: 技能选择界面 ====== -->
+        <div id="skillScreen" class="screen">
+            <div class="skill-selection">
+                <h2 class="skill-title">⚡ 选择一张技能卡</h2>
+                <p class="skill-subtitle">本局对战中可使用一次，为牌局增添趣味</p>
+                <div class="skill-options" id="skillOptions">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== 阶段2: 游戏主界面 ====== -->
+        <div id="gameScreen" class="screen">
+            <!-- 顶部状态栏 -->
+            <div class="game-top-bar">
+                <div class="level-info">
+                    <span class="level-label">当前等级</span>
+                    <span class="level-value" id="currentLevel">2</span>
+                </div>
+                <div class="team-scores">
+                    <span class="team-us">我方 <strong id="ourLevel">2</strong></span>
+                    <span class="vs-text">VS</span>
+                    <span class="team-them">对方 <strong id="theirLevel">2</strong></span>
+                </div>
+                <div class="coin-info">
+                    <span class="coin-icon-small">💰</span>
+                    <span id="gameCoinAmount">100</span>
+                </div>
+            </div>
+
+            <!-- 四人牌桌布局 -->
+            <div class="card-table">
+                <!-- 上家（对手B） -->
+                <div class="player-seat seat-top" id="seatTop">
+                    <div class="seat-info">
+                        <span class="seat-avatar">🤖</span>
+                        <span class="seat-name" id="nameTop">对手B</span>
+                        <span class="seat-card-count" id="countTop">27</span>
+                    </div>
+                    <div class="seat-played" id="playedTop"></div>
+                </div>
+
+                <!-- 左家（队友） -->
+                <div class="player-seat seat-left" id="seatLeft">
+                    <div class="seat-info">
+                        <span class="seat-avatar">😊</span>
+                        <span class="seat-name" id="nameLeft">队友</span>
+                        <span class="seat-card-count" id="countLeft">27</span>
+                    </div>
+                    <div class="seat-played" id="playedLeft"></div>
+                </div>
+
+                <!-- 右家（对手A） -->
+                <div class="player-seat seat-right" id="seatRight">
+                    <div class="seat-info">
+                        <span class="seat-avatar">🤖</span>
+                        <span class="seat-name" id="nameRight">对手A</span>
+                        <span class="seat-card-count" id="countRight">27</span>
+                    </div>
+                    <div class="seat-played" id="playedRight"></div>
+                </div>
+
+                <!-- 中央出牌区 -->
+                <div class="play-area-center" id="playAreaCenter">
+                    <div class="play-area-hint" id="playAreaHint"></div>
+                </div>
+
+                <!-- 下方（玩家自己） -->
+                <div class="player-seat seat-bottom" id="seatBottom">
+                    <div class="seat-played" id="playedBottom"></div>
+                </div>
+            </div>
+
+            <!-- 玩家手牌区 -->
+            <div class="my-hand-area">
+                <div class="my-cards" id="myCards">
+                    <!-- 动态生成手牌 -->
+                </div>
+            </div>
+
+            <!-- 操作按钮区 -->
+            <div class="action-bar">
+                <button class="action-btn btn-hint" id="btnHint" onclick="window._hint()">💡 提示</button>
+                <button class="action-btn btn-pass" id="btnPass" onclick="window._pass()" disabled>⏭ 不出</button>
+                <button class="action-btn btn-play" id="btnPlay" onclick="window._play()" disabled>🎴 出牌</button>
+            </div>
+
+            <!-- 技能按钮（动态添加） -->
+            <div class="skill-btn-area" id="skillBtnArea"></div>
+
+            <!-- 消息提示 -->
+            <div class="game-message" id="gameMessage"></div>
+        </div>
+
+        <!-- ====== 阶段3: 结算界面 ====== -->
+        <div id="resultScreen" class="screen">
+            <div class="result-content">
+                <h2 class="result-title" id="resultTitle">结算详情</h2>
+
+                <!-- 排名列表 -->
+                <div class="rank-list" id="rankList">
+                    <!-- 动态生成 -->
+                </div>
+
+                <!-- 得分详情 -->
+                <div class="score-detail" id="scoreDetail">
+                    <!-- 动态生成 -->
+                </div>
+
+                <div class="result-buttons">
+                    <button class="btn-primary" id="btnRestart">🔄 再来一局</button>
+                    <button class="btn-secondary" id="btnBackToLobby">🏠 返回大厅</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

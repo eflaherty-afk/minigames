@@ -446,7 +446,22 @@
         });
     }
 
-    // ========== 牌组选择阶段 ==========
+    // ========== 竞拍选牌阶段 ==========
+    let auctionState = {
+        decks: [],           // 2个可选牌组
+        playerBid: 0,        // 玩家当前出价
+        npcBid: 0,           // NPC当前出价
+        currentTurn: 'player', // 当前轮到谁 'player' | 'npc'
+        timer: null,         // 倒计时定时器
+        timeLeft: 0,         // 剩余时间(ms)
+        maxTime: 8000,       // 每轮思考时间 8秒
+        isFinished: false,   // 竞拍是否结束
+        playerPassed: false, // 玩家是否已放弃加价
+        npcPassed: false,    // NPC是否已放弃加价
+        npcMaxBid: 0,        // NPC愿意出的最高价
+        winner: null,        // 竞拍赢家 'player' | 'npc'
+    };
+
     function showDeckSelection() {
         switchScreen('deckScreen');
 
@@ -455,54 +470,372 @@
         $('deckNpcScore').textContent = state.npcRoundsWon;
         $('deckRoundIndicator').innerHTML = `回合 <strong>${state.currentRound + 1}</strong>/3`;
 
-        // NPC对话
-        $('npcDialogDeckText').textContent = randomPick(NPC_DIALOGS.deckSelect);
+        // 生成2个牌组供竞拍
+        const decks = generateDeckOptions(2);
+        auctionState.decks = decks;
+        auctionState.playerBid = 0;
+        auctionState.npcBid = 0;
+        auctionState.currentTurn = Math.random() < 0.5 ? 'player' : 'npc'; // 随机先手
+        auctionState.isFinished = false;
+        auctionState.playerPassed = false;
+        auctionState.npcPassed = false;
+        auctionState.winner = null;
+        // NPC心理价位：随机2~12之间
+        auctionState.npcMaxBid = 2 + Math.floor(Math.random() * 11);
 
-        // 生成牌组选项
-        const decksContainer = $('deckOptions');
-        // 动态随机生成3个牌组供玩家选择
-        const availableDecks = generateDeckOptions(3);
+        // 渲染竞拍界面
+        renderAuction();
 
-        decksContainer.innerHTML = availableDecks
-            .map(
-                (deck, i) => `
-            <div class="deck-option" data-deck-index="${i}">
-                <div class="deck-option-cards">
-                    ${deck.cards.map((c) => `<div class="deck-mini-card">${CARD_EMOJI[c]}</div>`).join('')}
-                </div>
-                <div class="deck-option-name">${deck.name}</div>
-                <p style="font-size:12px; color:var(--text-dim); margin-top:4px;">${deck.desc}</p>
-                <button class="btn-primary deck-select-btn" data-deck-index="${i}">选择</button>
-            </div>
-        `
-            )
-            .join('');
-
-        // 绑定选择事件
-        decksContainer.querySelectorAll('.deck-option').forEach((el) => {
-            el.addEventListener('click', function () {
-                // 高亮选中
-                decksContainer.querySelectorAll('.deck-option').forEach((e) => e.classList.remove('selected'));
-                this.classList.add('selected');
-            });
-        });
-
-        decksContainer.querySelectorAll('.deck-select-btn').forEach((btn) => {
-            btn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                const idx = parseInt(this.dataset.deckIndex);
-                selectDeck(availableDecks[idx]);
-            });
-        });
+        // 如果NPC先手，自动出价
+        if (auctionState.currentTurn === 'npc') {
+            setTimeout(() => npcBidTurn(), 800);
+        } else {
+            startAuctionTimer();
+        }
     }
 
-    function selectDeck(deck) {
+    function renderAuction() {
+        const decks = auctionState.decks;
+        // 渲染两组牌面
+        $('auctionDeckA').innerHTML = decks[0].cards.map(c =>
+            `<div class="deck-mini-card">${CARD_EMOJI[c]}</div>`
+        ).join('');
+        $('auctionDeckAName').textContent = decks[0].name;
+        $('auctionDeckADesc').textContent = decks[0].desc;
+
+        $('auctionDeckB').innerHTML = decks[1].cards.map(c =>
+            `<div class="deck-mini-card">${CARD_EMOJI[c]}</div>`
+        ).join('');
+        $('auctionDeckBName').textContent = decks[1].name;
+        $('auctionDeckBDesc').textContent = decks[1].desc;
+
+        // 更新出价显示
+        $('auctionPlayerBid').textContent = auctionState.playerBid;
+        $('auctionNpcBid').textContent = auctionState.npcBid;
+
+        // NPC名字
+        $('auctionNpcName').textContent = state.npcName;
+        $('auctionPlayerName').textContent = getUserName();
+
+        // 更新NPC对话
+        updateAuctionDialog();
+
+        // 更新回合指示
+        updateAuctionTurnUI();
+    }
+
+    function updateAuctionTurnUI() {
+        const isPlayerTurn = auctionState.currentTurn === 'player' && !auctionState.isFinished;
+        const playerArea = $('auctionPlayerArea');
+        const npcArea = $('auctionNpcArea');
+
+        // 高亮当前回合的一方
+        playerArea.classList.toggle('auction-active', auctionState.currentTurn === 'player' && !auctionState.isFinished);
+        npcArea.classList.toggle('auction-active', auctionState.currentTurn === 'npc' && !auctionState.isFinished);
+
+        // 按钮启用/禁用
+        const btns = document.querySelectorAll('.auction-bid-btn');
+        btns.forEach(btn => {
+            btn.disabled = !isPlayerTurn;
+            btn.classList.toggle('disabled', !isPlayerTurn);
+        });
+        const passBtn = $('btnAuctionPass');
+        if (passBtn) {
+            passBtn.disabled = !isPlayerTurn;
+            passBtn.classList.toggle('disabled', !isPlayerTurn);
+        }
+
+        // 更新出价显示
+        $('auctionPlayerBid').textContent = auctionState.playerBid;
+        $('auctionNpcBid').textContent = auctionState.npcBid;
+
+        // 更新加价按钮状态（标记不同数额）
+        if (isPlayerTurn) {
+            $('auctionTurnHint').textContent = '轮到你出价了！';
+            $('auctionTurnHint').style.color = '#27ae60';
+        } else if (auctionState.isFinished) {
+            $('auctionTurnHint').textContent = '';
+        } else {
+            $('auctionTurnHint').textContent = `${state.npcName} 正在思考...`;
+            $('auctionTurnHint').style.color = '#c0392b';
+        }
+
+        // 通过/放弃标记
+        const playerPassMark = $('auctionPlayerPass');
+        const npcPassMark = $('auctionNpcPass');
+        if (playerPassMark) playerPassMark.style.display = auctionState.playerPassed ? 'block' : 'none';
+        if (npcPassMark) npcPassMark.style.display = auctionState.npcPassed ? 'block' : 'none';
+    }
+
+    function updateAuctionDialog() {
+        const dialogEl = $('npcDialogDeckText');
+        if (auctionState.isFinished) return;
+        if (auctionState.npcBid === 0 && auctionState.playerBid === 0) {
+            dialogEl.textContent = randomPick(NPC_DIALOGS.deckSelect);
+        } else if (auctionState.npcBid > auctionState.playerBid) {
+            dialogEl.textContent = randomPick([
+                '出价超过你了，跟不跟？',
+                '这牌我志在必得。',
+                '价格还能再高哦~',
+                '犹豫就会败北！',
+            ]);
+        } else {
+            dialogEl.textContent = randomPick([
+                '嘶……要加价吗？',
+                '你出手挺阔绰啊。',
+                '有点意思，让我想想。',
+                '这价格……值得吗？',
+            ]);
+        }
+    }
+
+    // 倒计时条
+    function startAuctionTimer() {
+        clearInterval(auctionState.timer);
+        auctionState.timeLeft = auctionState.maxTime;
+        const bar = $('auctionTimerBar');
+        bar.style.width = '100%';
+
+        auctionState.timer = setInterval(() => {
+            auctionState.timeLeft -= 50;
+            const pct = Math.max(0, auctionState.timeLeft / auctionState.maxTime * 100);
+            bar.style.width = pct + '%';
+
+            if (auctionState.timeLeft <= 0) {
+                clearInterval(auctionState.timer);
+                // 超时自动pass
+                if (auctionState.currentTurn === 'player' && !auctionState.playerPassed) {
+                    playerPass();
+                }
+            }
+        }, 50);
+    }
+
+    function stopAuctionTimer() {
+        clearInterval(auctionState.timer);
+        const bar = $('auctionTimerBar');
+        if (bar) bar.style.width = '0%';
+    }
+
+    // 玩家加价
+    window._auctionBid = function(amount) {
+        if (auctionState.currentTurn !== 'player' || auctionState.isFinished || auctionState.playerPassed) return;
+        auctionState.playerBid += amount;
+        stopAuctionTimer();
+        updateAuctionTurnUI();
+
+        // 检查是否NPC已pass -> 直接结束
+        if (auctionState.npcPassed) {
+            finishAuction();
+            return;
+        }
+
+        // 轮到NPC
+        auctionState.currentTurn = 'npc';
+        updateAuctionTurnUI();
+        setTimeout(() => npcBidTurn(), 600 + Math.random() * 800);
+    };
+
+    // 玩家放弃加价
+    window._auctionPass = function() {
+        if (auctionState.currentTurn !== 'player' || auctionState.isFinished || auctionState.playerPassed) return;
+        playerPass();
+    };
+
+    function playerPass() {
+        auctionState.playerPassed = true;
+        stopAuctionTimer();
+
+        // 如果NPC也已经pass或NPC还没出过价 -> 结束竞拍
+        if (auctionState.npcPassed) {
+            finishAuction();
+            return;
+        }
+
+        // NPC还没pass -> 给NPC一个最后出价机会后结束
+        auctionState.currentTurn = 'npc';
+        updateAuctionTurnUI();
+        setTimeout(() => {
+            // NPC可以选择最后加一次或直接结束
+            if (!auctionState.npcPassed && auctionState.npcBid <= auctionState.playerBid && auctionState.npcBid < auctionState.npcMaxBid) {
+                const raise = randomPick([1, 1, 1, 2, 3]);
+                if (auctionState.npcBid + raise <= auctionState.npcMaxBid) {
+                    auctionState.npcBid += raise;
+                }
+            }
+            auctionState.npcPassed = true;
+            finishAuction();
+        }, 500 + Math.random() * 500);
+    }
+
+    // NPC出价回合
+    function npcBidTurn() {
+        if (auctionState.isFinished) return;
+
+        const gap = auctionState.playerBid - auctionState.npcBid;
+
+        // NPC策略：如果当前出价低于心理价位，尝试加价
+        if (auctionState.npcBid < auctionState.npcMaxBid) {
+            // 需要追上或超过玩家出价
+            if (gap >= 0) {
+                // NPC出价不高于玩家，需要加价
+                const needRaise = gap + 1; // 至少追平+1
+                const maxCanRaise = auctionState.npcMaxBid - auctionState.npcBid;
+                if (needRaise <= maxCanRaise) {
+                    // 能追上，随机选择追平+1 或多加一点
+                    const raise = Math.min(needRaise + Math.floor(Math.random() * 3), maxCanRaise);
+                    auctionState.npcBid += raise;
+                } else {
+                    // 追不上了，50%概率追到最高价位，50%直接放弃
+                    if (Math.random() < 0.5 && maxCanRaise > 0) {
+                        auctionState.npcBid += maxCanRaise;
+                    } else {
+                        auctionState.npcPassed = true;
+                    }
+                }
+            } else {
+                // NPC已经领先，有概率继续加价或pass让玩家出
+                if (Math.random() < 0.3) {
+                    const extra = randomPick([1, 1, 2]);
+                    auctionState.npcBid += Math.min(extra, auctionState.npcMaxBid - auctionState.npcBid);
+                } else {
+                    // pass给玩家
+                    auctionState.npcPassed = true;
+                }
+            }
+        } else {
+            // 已到最高价位，放弃
+            auctionState.npcPassed = true;
+        }
+
+        $('auctionNpcBid').textContent = auctionState.npcBid;
+        updateAuctionDialog();
+
+        // 如果NPC pass了
+        if (auctionState.npcPassed) {
+            if (auctionState.playerPassed) {
+                finishAuction();
+            } else {
+                auctionState.currentTurn = 'player';
+                updateAuctionTurnUI();
+                startAuctionTimer();
+            }
+            return;
+        }
+
+        // 如果玩家已经pass -> 结束
+        if (auctionState.playerPassed) {
+            finishAuction();
+            return;
+        }
+
+        // 轮到玩家
+        auctionState.currentTurn = 'player';
+        updateAuctionTurnUI();
+        startAuctionTimer();
+    }
+
+    // 竞拍结束
+    function finishAuction() {
+        auctionState.isFinished = true;
+        stopAuctionTimer();
+
+        // 判定赢家：出价高者优先选牌
+        let winner;
+        if (auctionState.playerBid > auctionState.npcBid) {
+            winner = 'player';
+        } else if (auctionState.npcBid > auctionState.playerBid) {
+            winner = 'npc';
+        } else {
+            // 平局时随机
+            winner = Math.random() < 0.5 ? 'player' : 'npc';
+        }
+        auctionState.winner = winner;
+
+        updateAuctionTurnUI();
+
+        // 显示结果
+        if (winner === 'player') {
+            $('auctionTurnHint').textContent = '🏆 你赢得竞拍！请选择牌组';
+            $('auctionTurnHint').style.color = '#27ae60';
+            $('npcDialogDeckText').textContent = '好吧……你先选。';
+            // 显示选择按钮
+            showDeckChoiceButtons();
+        } else {
+            $('auctionTurnHint').textContent = `💀 ${state.npcName} 赢得竞拍，优先选牌...`;
+            $('auctionTurnHint').style.color = '#c0392b';
+            $('npcDialogDeckText').textContent = randomPick(['先选权归我！', '让我看看……', '这组不错！']);
+            // NPC自动选牌后进入对战
+            setTimeout(() => npcPickDeck(), 1200);
+        }
+    }
+
+    function showDeckChoiceButtons() {
+        // 在两组牌下方显示选择按钮
+        const deckAEl = $('auctionDeckAWrap');
+        const deckBEl = $('auctionDeckBWrap');
+        deckAEl.classList.add('selectable');
+        deckBEl.classList.add('selectable');
+
+        // 移除旧按钮
+        deckAEl.querySelectorAll('.auction-pick-btn').forEach(b => b.remove());
+        deckBEl.querySelectorAll('.auction-pick-btn').forEach(b => b.remove());
+
+        const btnA = document.createElement('button');
+        btnA.className = 'btn-primary auction-pick-btn';
+        btnA.textContent = '选择此牌组';
+        btnA.onclick = () => playerPickDeck(0);
+        deckAEl.appendChild(btnA);
+
+        const btnB = document.createElement('button');
+        btnB.className = 'btn-primary auction-pick-btn';
+        btnB.textContent = '选择此牌组';
+        btnB.onclick = () => playerPickDeck(1);
+        deckBEl.appendChild(btnB);
+    }
+
+    function playerPickDeck(choiceIndex) {
+        const playerDeck = auctionState.decks[choiceIndex];
+        const npcDeck = auctionState.decks[1 - choiceIndex];
+        applyDecks(playerDeck, npcDeck);
+    }
+
+    function npcPickDeck() {
+        // NPC简单策略：计算哪组牌更"强"（有更多同类型的），选那一组
+        const scores = auctionState.decks.map(deck => {
+            const counts = {};
+            deck.cards.forEach(c => counts[c] = (counts[c] || 0) + 1);
+            return Math.max(...Object.values(counts)); // 最多同类型牌数
+        });
+        // NPC偏好选"更集中"的牌组（70%概率），或随机
+        let npcChoice;
+        if (scores[0] !== scores[1] && Math.random() < 0.7) {
+            npcChoice = scores[0] > scores[1] ? 0 : 1;
+        } else {
+            npcChoice = Math.random() < 0.5 ? 0 : 1;
+        }
+
+        // 高亮NPC选的牌组
+        const wrapId = npcChoice === 0 ? 'auctionDeckAWrap' : 'auctionDeckBWrap';
+        $(wrapId).classList.add('npc-picked');
+
+        $('npcDialogDeckText').textContent = '我选这组！';
+        $('auctionTurnHint').textContent = '你获得剩余的牌组';
+        $('auctionTurnHint').style.color = 'var(--gold)';
+
+        setTimeout(() => {
+            const playerDeck = auctionState.decks[1 - npcChoice];
+            const npcDeck = auctionState.decks[npcChoice];
+            applyDecks(playerDeck, npcDeck);
+        }, 1200);
+    }
+
+    function applyDecks(playerDeck, npcDeck) {
         // 玩家牌组
-        state.playerDeck = shuffle([...deck.cards]);
+        state.playerDeck = shuffle([...playerDeck.cards]);
         state.playerHand = [...state.playerDeck];
 
-        // NPC 随机生成一个牌组
-        const npcDeck = generateDeck();
+        // NPC牌组
         state.npcDeck = shuffle([...npcDeck.cards]);
         state.npcHand = [...state.npcDeck];
 

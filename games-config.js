@@ -26,6 +26,16 @@ const GAMES = [
         color: 'linear-gradient(135deg, #c0392b, #7a1a1a)',
         cost: '5~50',
     },
+    {
+        id: 'guan-dan',
+        name: '掼蛋',
+        desc: '经典四人掼蛋对战！与AI队友配合，升级打牌赢取小爱豆！',
+        icon: '🃏',
+        category: 'strategy',
+        url: './games/guan-dan/index.html',
+        color: 'linear-gradient(135deg, #2c3e50, #4a69bd)',
+        cost: '10~20',
+    },
 ];
 
 /*

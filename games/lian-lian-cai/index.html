@@ -20,6 +20,7 @@
                         <li>✊石头 > ✌️剪刀 > 🖐布 > ✊石头</li>
                         <li>每大局共 <strong>3 轮</strong>，每轮各出 <strong>5 张牌</strong></li>
                         <li>每轮赢牌多者胜出该轮，<strong>三局两胜</strong>决定最终赢家</li>
+                        <li>每轮开始前进入 <strong>⚖️ 竞拍</strong>，出价高者优先选牌组</li>
                         <li>每局开始前可选择 <strong>1 张技能卡</strong>，在对战中使用</li>
                         <li>开局需 <strong>下注小爱豆</strong>，胜利赢回、失败扣除 💰</li>
                     </ul>
@@ -97,7 +98,7 @@
             </div>
         </div>
 
-        <!-- ====== 阶段2: 牌组选择界面 ====== -->
+        <!-- ====== 阶段2: 竞拍选牌界面 ====== -->
         <div id="deckScreen" class="screen">
             <div class="top-bar">
                 <div class="player-info">
@@ -106,7 +107,7 @@
                     <span class="player-score" id="deckPlayerScore">0</span>
                 </div>
                 <div class="round-info">
-                    <span class="round-label">牌组选择</span>
+                    <span class="round-label">⚖️ 竞拍选牌</span>
                 </div>
                 <div class="player-info">
                     <span class="player-score" id="deckNpcScore">0</span>
@@ -116,12 +117,74 @@
             </div>
             <div class="round-indicator" id="deckRoundIndicator">回合 <strong>1</strong>/3</div>
 
-            <div class="deck-selection">
-                <h2 class="deck-title">选择你的牌组</h2>
-                <p class="deck-hint">选择一个牌组来进行本轮对战</p>
-                <div class="deck-options" id="deckOptions">
-                    <!-- 动态生成牌组选项 -->
+            <!-- 两组牌面展示 -->
+            <div class="auction-decks">
+                <div class="auction-deck-wrap" id="auctionDeckAWrap">
+                    <div class="auction-deck-label">牌组 A</div>
+                    <div class="auction-deck-cards" id="auctionDeckA"></div>
+                    <div class="auction-deck-name" id="auctionDeckAName"></div>
+                    <div class="auction-deck-desc" id="auctionDeckADesc"></div>
                 </div>
+                <div class="auction-vs-divider">VS</div>
+                <div class="auction-deck-wrap" id="auctionDeckBWrap">
+                    <div class="auction-deck-label">牌组 B</div>
+                    <div class="auction-deck-cards" id="auctionDeckB"></div>
+                    <div class="auction-deck-name" id="auctionDeckBName"></div>
+                    <div class="auction-deck-desc" id="auctionDeckBDesc"></div>
+                </div>
+            </div>
+
+            <!-- 竞拍区域 -->
+            <div class="auction-area">
+                <!-- 双方出价对比 -->
+                <div class="auction-bids">
+                    <div class="auction-bid-side" id="auctionPlayerArea">
+                        <div class="auction-bid-avatar">🧑</div>
+                        <div class="auction-bid-name" id="auctionPlayerName">玩家</div>
+                        <div class="auction-bid-value">
+                            <span class="auction-bid-icon">💰</span>
+                            <span class="auction-bid-num" id="auctionPlayerBid">0</span>
+                        </div>
+                        <div class="auction-pass-mark" id="auctionPlayerPass" style="display:none;">已放弃</div>
+                    </div>
+
+                    <div class="auction-bid-center">
+                        <div class="auction-scale-icon">⚖️</div>
+                        <div class="auction-turn-hint" id="auctionTurnHint">竞拍开始！</div>
+                    </div>
+
+                    <div class="auction-bid-side npc-side" id="auctionNpcArea">
+                        <div class="auction-bid-avatar">🤖</div>
+                        <div class="auction-bid-name" id="auctionNpcName">NPC</div>
+                        <div class="auction-bid-value">
+                            <span class="auction-bid-icon">💰</span>
+                            <span class="auction-bid-num" id="auctionNpcBid">0</span>
+                        </div>
+                        <div class="auction-pass-mark" id="auctionNpcPass" style="display:none;">已放弃</div>
+                    </div>
+                </div>
+
+                <!-- 加价按钮 -->
+                <div class="auction-actions">
+                    <button class="auction-bid-btn" onclick="window._auctionBid(1)">
+                        <span class="auction-bid-btn-icon">💰</span> +1
+                    </button>
+                    <button class="auction-bid-btn" onclick="window._auctionBid(3)">
+                        <span class="auction-bid-btn-icon">💰</span> +3
+                    </button>
+                    <button class="auction-bid-btn" onclick="window._auctionBid(5)">
+                        <span class="auction-bid-btn-icon">💰</span> +5
+                    </button>
+                    <button class="auction-bid-btn auction-pass-btn" id="btnAuctionPass" onclick="window._auctionPass()">
+                        ✋ 不加了
+                    </button>
+                </div>
+
+                <!-- 倒计时条 -->
+                <div class="auction-timer">
+                    <div class="auction-timer-bar" id="auctionTimerBar"></div>
+                </div>
+                <div class="auction-timer-hint">倒计时耗尽之前，竞价较高的一方优先选择牌组。</div>
             </div>
 
             <div class="npc-dialog" id="npcDialogDeck">
